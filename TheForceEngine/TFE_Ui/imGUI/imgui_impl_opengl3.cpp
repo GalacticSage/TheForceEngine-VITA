@@ -114,6 +114,11 @@
 
 #include "imgui.h"
 #ifndef IMGUI_DISABLE
+#ifdef __vita__
+#define IMGUI_IMPL_OPENGL_ES2
+#define IMGUI_IMPL_OPENGL_LOADER_CUSTOM
+#include<vitaGL.h>
+#endif
 #include "imgui_impl_opengl3.h"
 #include <stdio.h>
 #include <stdint.h>     // intptr_t
@@ -138,7 +143,8 @@
 #endif
 
 // GL includes
-#if defined(IMGUI_IMPL_OPENGL_ES2)
+#if defined (__vita__)
+#elif defined(IMGUI_IMPL_OPENGL_ES2)
 #if (defined(__APPLE__) && (TARGET_OS_IOS || TARGET_OS_TV))
 #include <OpenGLES/ES2/gl.h>    // Use GL ES 2
 #else
@@ -909,8 +915,10 @@ bool    ImGui_ImplOpenGL3_CreateDeviceObjects()
     glLinkProgram(bd->ShaderHandle);
     CheckProgram(bd->ShaderHandle, "shader program");
 
+#ifndef __vita__
     glDetachShader(bd->ShaderHandle, vert_handle);
     glDetachShader(bd->ShaderHandle, frag_handle);
+#endif
     glDeleteShader(vert_handle);
     glDeleteShader(frag_handle);
 

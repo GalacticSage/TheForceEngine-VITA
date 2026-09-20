@@ -275,7 +275,7 @@ namespace TFE_System
 			CloseHandle(ShExecInfo.hProcess);
 		}
 		return true;
-#else
+#elif defined(__linux__) || defined(__APPLE__)
 		// On Linux/macOS, use xdg-open / open to delegate to the user's default
 		// file manager or application. pathToExe is treated as the path to open.
 		pid_t pid = fork();
@@ -294,6 +294,12 @@ namespace TFE_System
 			waitpid(pid, &status, 0);
 		}
 		return true;
+#else
+		(void)pathToExe;
+		(void)exeDir;
+		(void)param;
+		(void)waitForCompletion;
+		return false;
 #endif
 	}
 

@@ -32,6 +32,16 @@ namespace OpenGL_Caps
 
 	void queryCapabilities()
 	{
+		m_supportFlags = 0;
+		m_deviceTier = DEV_TIER_0;
+		m_textureBufferMaxSize = 0;
+		m_maxAnisotropy = 1.0f;
+#ifdef TFE_VITA
+		m_supportFlags = CAP_VBO | CAP_FBO | CAP_NON_POW_2;
+		m_deviceTier = DEV_TIER_1;
+		return;
+#endif
+
 		GLint gl_maj = 0, gl_min = 0;
 
 		m_supportFlags = 0;

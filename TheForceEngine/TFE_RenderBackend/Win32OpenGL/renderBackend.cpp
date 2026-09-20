@@ -236,6 +236,8 @@ namespace TFE_RenderBackend
 		}
 
 		int glver = gladLoadGL((GLADloadfunc)SDL_GL_GetProcAddress);
+		if(!glad_glGenerateMipmap)
+			glad_glGenerateMipmap = (PFNGLGENERATEMIPMAPPROC)SDL_GL_GetProcAddress("glGenerateMipmap");
 		if (glver == 0)
 		{
 			TFE_System::logWrite(LOG_ERROR, "RenderBackend", "cannot initialize GLAD");
@@ -248,7 +250,11 @@ namespace TFE_RenderBackend
 		printGLInfo();
 		int tier = OpenGL_Caps::getDeviceTier();
 		TFE_System::logWrite(LOG_MSG, "RenderBackend", "OpenGL Device Tier: %d", tier);
+#ifdef TFE_VITA
+		if(tier < 1)
+#else
 		if (tier < 2)
+#endif
 		{
 			TFE_System::logWrite(LOG_ERROR, "RenderBackend", "Insufficient GL capabilities!");
 			SDL_GL_DeleteContext(context);
@@ -415,6 +421,16 @@ namespace TFE_RenderBackend
 
 	void swap(bool blitVirtualDisplay)
 	{
+	#ifdef TFE_VITA
+		static int vitaSwapCount = 0;
+		const int vitaSwapFrame = vitaSwapCount++;
+
+		if(vitaSwapFrame < 8)
+		{
+			TFE_System::logWrite(
+				LOG_MSG, "VitaFrame", "swap %d ENTER blit=%d skip=%d", vitaSwapFrame, (int)blitVirtualDisplay, (int)s_skipDisplayAndClear);
+		}
+#endif
 		// If an external renderer (e.g. OGV player) already drew to the backbuffer, skip.
 		if (s_skipDisplayAndClear)
 		{
@@ -428,17 +444,44 @@ namespace TFE_RenderBackend
 		}
 		else { glClear(GL_COLOR_BUFFER_BIT); }
 
+#ifdef TFE_VITA
+	if(vitaSwapFrame < 8)
+		TFE_System::logWrite(LOG_MSG, "VitaFrame", "swap %d before UI", vitaSwapFrame);
+#endif
+
 		// Handle the UI.
 		TFE_ZONE_BEGIN(systemUi, "System UI");
 		if (TFE_Ui::isGuiFrameActive() && s_screenCapture->wantsToDrawGui()) { s_screenCapture->drawGui(); }
+#ifdef TFE_VITA
+	if(vitaSwapFrame < 8)
+		TFE_System::logWrite(LOG_MSG, "VitaFrame", "swap %d before Ui::render", vitaSwapFrame);
+#endif
+
 		TFE_Ui::render();
+
+#ifdef TFE_VITA
+	if(vitaSwapFrame < 8)
+		TFE_System::logWrite(LOG_MSG, "VitaFrame", "swap %d after Ui::render", vitaSwapFrame);
+#endif
+		
 		// Reset the state due to UI changes.
 		TFE_RenderState::clear();
 		TFE_ZONE_END(systemUi);
 
 		TFE_ZONE_BEGIN(swapGpu, "GPU Swap Buffers");
 		// Update the window.
+#ifdef TFE_VITA
+	if(vitaSwapFrame < 8)
+		TFE_System::logWrite(LOG_MSG, "VitaFrame", "swap %d before SDL_GL_SwapWindow", vitaSwapFrame);
+#endif
+
 		SDL_GL_SwapWindow((SDL_Window*)m_window);
+
+#ifdef TFE_VITA
+	if(vitaSwapFrame < 8)
+		TFE_System::logWrite(LOG_MSG, "VitaFrame", "swap %d after SDL_GL_SwapWindow", vitaSwapFrame);
+#endif
+		
 		TFE_ZONE_END(swapGpu);
 
 		if (s_screenshotQueued)
@@ -873,15 +916,56 @@ namespace TFE_RenderBackend
 
 	void drawVirtualDisplay()
 	{
+#ifdef TFE_VITA
+		static int vitaDrawCount = 0;
+		const int vitaFrame = vitaDrawCount++;
+
+		if(vitaFrame < 8)
+		{
+			TFE_System::logWrite(
+					LOG_MSG,
+					"VitaFrame",
+					"drawVirtualDisplay %d ENTER virtualDisplay=%p virtualRT=%p mode=%d", vitaFrame, (void*)s_virtualDisplay,
+					(void*)s_virtualRenderTarget,
+					(int)s_displayMode
+					);
+		}
+#endif
 		TFE_ZONE("Draw Virtual Display");
-		if (!s_virtualDisplay && !s_virtualRenderTarget) { return; }
+		if (!s_virtualDisplay && !s_virtualRenderTarget)
+		{
+#ifdef TFE_VITA
+			if(vitaFrame < 8)
+				TFE_System::logWrite(LOG_MSG,
+					"VitaFRame",
+		"drawVirtualDisplay %d EARLY RETURN", vitaFrame);
+#endif
+			return;
+		}
 
 		// Only clear if (1) s_virtualDisplay == null or (2) s_displayMode != DMODE_STRETCH
 		if (s_displayMode != DMODE_STRETCH)
 		{
+
+#ifdef TFE_VITA
+	if(vitaFrame < 8)
+		TFE_System::logWrite(LOG_MSG, "VitaFrame", "drawVirtualDisplay %d before glClear", vitaFrame);
+#endif
 			glClear(GL_COLOR_BUFFER_BIT);
+#ifdef TFE_VITA
+	if(vitaFrame < 8)
+		TFE_System::logWrite(LOG_MSG, "VitaFrame", "drawVirtualDisplay %d after glClear", vitaFrame);
+#endif
 		}
+#ifdef TFE_VITA
+	if(vitaFrame < 8)
+		TFE_System::logWrite(LOG_MSG, "VitaFrame", "drawVirtualDisplay %d before PostProcess", vitaFrame);
+#endif
 		TFE_PostProcess::execute();
+#ifdef TFE_VITA
+	if (vitaFrame < 8)
+		TFE_System::logWrite(LOG_MSG, "VitaFrame", "drawVirtualDisplay %d after PostProcess", vitaFrame);
+#endif
 	}
 
 	// GPU commands
@@ -920,7 +1004,24 @@ namespace TFE_RenderBackend
 	{
 		RenderTarget* renderTarget = (RenderTarget*)handle;
 		renderTarget->clear(clearColor, clearDepth);
+
+#ifdef TFE_VITA
+		TFE_System::logWrite(
+				LOG_MSG,
+				"VitaGL",
+				"clearRendertarget: glClearColor=%p glClearDepth=%p", (void*)glad_glClearColor, (void*)glad_glClearDepth
+				);
+
+		glClearColor(
+				s_clearColor[0],
+				s_clearColor[1],
+				s_clearColor[2],
+				s_clearColor[3]
+		);
+#else
+
 		setClearColor(s_clearColor);
+#endif
 	}
 
 	void clearRenderTargetDepth(RenderTargetHandle handle, f32 clearDepth)

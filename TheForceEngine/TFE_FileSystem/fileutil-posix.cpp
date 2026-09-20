@@ -12,6 +12,12 @@
 #include <TFE_System/system.h>
 #include "fileutil.h"
 #include "filestream.h"
+#ifdef __vita__
+#include<SDL.h>
+#ifndef PATH_MAX
+#define PATH_MAX TFE_MAX_PATH
+#endif
+#endif
 #ifdef __APPLE__
 #include <mach-o/dyld.h>	// For macOS-specific executable path
 #endif
@@ -111,8 +117,22 @@ namespace FileUtil
 		}
 	}
 
-#ifdef __APPLE__
-
+#ifdef __vita__
+	void getExecutionDirectory(char* dir)
+	{
+		char* base = SDL_GetBasePath();
+		if(!base)
+		{
+			dir[0] = '\0';
+			return;
+		}
+		snprintf(dir, TFE_MAX_PATH, "%s", base);
+		SDL_free(base);
+		size_t len = strlen(dir);
+		if(len && dir[len - 1] == '/')
+			dir[len - 1] = '\0';
+	}
+#elif defined(__APPLE)
 	void getExecutionDirectory(char *dir)
 	{
 		char exe[PATH_MAX];
@@ -258,6 +278,25 @@ namespace FileUtil
 
 	bool directoryExists(const char *path, char *outPath)
 	{
+#ifdef TFE_VITA
+		DIR* exactDir = opendir(path);
+		if(exactDir)
+		{
+			closedir(exactDir);
+			if(outPath)
+			{
+				snprintf(outPath, TFE_MAX_PATH, "%s", path);
+
+				size_t len = strlen(outPath);
+				if(len && outPath[len - 1] != '/' && len < TFE_MAX_PATH - 1)
+				{
+					outPath[len] = '/';
+					outPath[len + 1] = '\0';
+				}
+			}
+			return true;
+		}
+#endif
 		char *ret;
 
 		ret = findFileObjectNoCase(path, true);
@@ -385,7 +424,9 @@ namespace FileUtil
 			TFE_System::logWrite(LOG_WARNING, "getModifiedTime", "stat(%s) failed with %d\n", path, errno);
 			return (u64)-1;  // revisit
 		}
-#ifdef __APPLE__
+#ifdef __vita__
+		mtim = (u64)st.st_mtime * 10000000ULL;
+#elif defined(__APPLE__)
 		mtim = (u64)st.st_mtimespec.tv_sec * 10000 + (u64)((double)st.st_mtimespec.tv_nsec / 100.0);
 #else
 		mtim = (u64)st.st_mtim.tv_sec * 10000 + (u64)((double)st.st_mtim.tv_nsec / 100.0);

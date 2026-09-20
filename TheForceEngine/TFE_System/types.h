@@ -5,6 +5,10 @@
 #include <float.h>
 #include <atomic>
 
+#ifndef _WIN32
+#include<strings.h>
+#endif
+
 typedef uint64_t u64;
 typedef int64_t s64;
 typedef uint32_t u32;

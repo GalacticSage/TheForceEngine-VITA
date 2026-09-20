@@ -57,8 +57,8 @@
 #define PROGRAM_ERROR   1
 #define PROGRAM_SUCCESS 0
 
-#ifndef _DEBUG
-#define INSTALL_CRASH_HANDLER 1
+#if !defined(_DEBUG) && !defined(__vita__)
+#define INSTALL_CRASH_HANDLED 1
 #else
 #define INSTALL_CRASH_HANDLER 0
 #endif

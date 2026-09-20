@@ -641,7 +641,6 @@ namespace LevelEditor
 									const s32 id = findSectorByName(targetSectorName);
 									const EditorSector* targetSector = id >= 0 ? &s_level.sectors[id] : nullptr;
 									if (!targetSector) { continue; }
-									if (targetWall >= (s32)targetSector->walls.size()) { continue; }
 
 									Vec2f endPoint = { 0 };
 									if (targetWall < 0)
@@ -690,7 +689,6 @@ namespace LevelEditor
 								const s32 id = findSectorByName(targetSectorName);
 								const EditorSector* targetSector = id >= 0 ? &s_level.sectors[id] : nullptr;
 								if (!targetSector) { continue; }
-								if (targetWall >= (s32)targetSector->walls.size()) { continue; }
 
 								Vec2f endPoint = { 0 };
 								if (targetWall < 0)

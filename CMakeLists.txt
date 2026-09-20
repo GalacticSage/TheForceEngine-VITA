@@ -1,4 +1,14 @@
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
+
+option(TFE_VITA "Build for the PSVita" OFF)
+
+if(TFE_VITA AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+	if(NOT DEFINED ENV{VITASDK})
+		message(FATAL_ERROR "Set VITASDK")
+	endif()
+	set(CMAKE_TOOLCHAIN_FILE "$ENV{VITASDK}/share/vita.toolchain.cmake" CACHE FILEPATH "VitaSDK toolchain")
+endif()
+
 include(CheckCXXCompilerFlag)
 
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
@@ -51,7 +61,13 @@ include(GNUInstallDirs)
 
 ## Options
 option(ENABLE_TFE "Enable building “The Force Engine”" ON)
-option(ENABLE_SYSMIDI "Enable System-MIDI Output if RTMidi is available" ON)
+
+if(TFE_VITA)
+	set(ENABLE_SYSMIDI OFF)
+else()
+	option(ENABLE_SYSMIDI "Enable System-MIDI Output if RTMidi is available" ON)
+endif()
+
 option(ENABLE_EDITOR "Enable TFE Editor" OFF)
 option(ENABLE_OGV_CUTSCENES "Enable OGV (Ogg Theora) video cutscene support" OFF)
 option(ENABLE_ADJUSTABLEHUD_MOD "Install the build‑in 'AdjustableHud mod' with TFE" ON)
@@ -66,7 +82,15 @@ if(ENABLE_TFE)
 		set_target_properties(tfe PROPERTIES OUTPUT_NAME "theforceengine")
 	endif()
 
-	if(UNIX)
+	if(TFE_VITA)
+		find_package(SDL2 REQUIRED)
+		find_package(SDL2_image CONFIG REQUIRED)
+
+		target_include_directories(tfe PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+		target_link_libraries(tfe PRIVATE SDL2::SDL2 SDL2_image::SDL2_image-static)
+
+		target_link_libraries(tfe PRIVATE -Wl,--whole-archive pthread SceShaccCgExt -Wl,--no-whole-archive taihen_stub)
+	elseif(UNIX)
 		set(THREADS_PREFER_PTHREAD_FLAG ON)
 		find_package(Threads REQUIRED)
 		find_package(PkgConfig REQUIRED)
@@ -137,8 +161,63 @@ if(ENABLE_TFE)
 	target_include_directories(tfe PRIVATE "TheForceEngine/TFE_ForceScript/Angelscript/angelscript/include")
 	target_include_directories(tfe PRIVATE "TheForceEngine/TFE_ForceScript/Angelscript/add_on")
 	target_include_directories(tfe PRIVATE TheForceEngine)
-
+if(TFE_VITA)
+	add_compile_definitions(TFE_VITA=1)
+endif()	
 	add_subdirectory(TheForceEngine/)
+if(TFE_VITA)
+	target_compile_definitions(tfe PRIVATE TFE_VITA=1)
+	include("${VITASDK}/share/vita.cmake")
+	set_target_properties(tfe PROPERTIES OUTPUT_NAME "tfe")
+	vita_create_self(eboot.bin tfe)
+	set(TFE_VITA_GAME_DATA_DIR "" CACHE PATH "Dark Forces game data dir")
+	if(NOT EXISTS "${TFE_VITA_GAME_DATA_DIR}/DARK.GOB")
+		message(FATAL_ERROR "TFE_VITA_GAME_DATA_DIR must contain DARK.GOB")
+	endif()
+
+	set(_vpk_args)
+	set(_vpk_inputs)
+	set(_tfe_assets "${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine")
+
+	foreach(_dir Captions ExternalData UI_Text UI_Images Shaders SoundFonts Fonts Mods)
+		file(GLOB_RECURSE _files CONFIGURE_DEPENDS LIST_DIRECTORIES FALSE RELATIVE "${_tfe_assets}" "${_tfe_assets}/${_dir}/*")
+		foreach(_file IN LISTS _files)
+			list(APPEND _vpk_args -a "${_tfe_assets}/${_file}=${_file}")
+			list(APPEND _vpk_inputs "${_tfe_assets}/${_file}")
+		endforeach()
+	endforeach()
+
+	file(GLOB_RECURSE _game_files CONFIGURE_DEPENDS LIST_DIRECTORIES FALSE RELATIVE "${TFE_VITA_GAME_DATA_DIR}"
+		"${TFE_VITA_GAME_DATA_DIR}/*.GOB"
+		"${TFE_VITA_GAME_DATA_DIR}/*.gob"
+		"${TFE_VITA_GAME_DATA_DIR}/*.LFD"
+		"${TFE_VITA_GAME_DATA_DIR}/*.lfd")
+	foreach(_file IN LISTS _game_files)
+		list(APPEND _vpk_args -a "${TFE_VITA_GAME_DATA_DIR}/${_file}=${_file}")
+		list(APPEND _vpk_inputs "${TFE_VITA_GAME_DATA_DIR}/${_file}")
+	endforeach()
+
+	add_custom_command(
+		OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/tfe.vpk"
+		COMMAND "${VITASDK}/bin/vita-mksfoex"
+		-s TITLE_ID=TFEVITA01 -s APP_VER=01.05
+		"The Force Engine" "${CMAKE_CURRENT_BINARY_DIR}/tfe_param.sfo"
+		COMMAND "${VITASDK}/bin/vita-pack-vpk"
+		-s "${CMAKE_CURRENT_BINARY_DIR}/tfe_param.sfo"
+		-b "${CMAKE_CURRENT_BINARY_DIR}/eboot.bin"
+		${_vpk_args} "${CMAKE_CURRENT_BINARY_DIR}/tfe.vpk"
+		DEPENDS eboot.bin-self ${_vpk_inputs}
+		COMMAND_EXPAND_LISTS VERBATIM
+	)
+	add_custom_target(tfe_vpk DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/tfe.vpk")
+
+endif()
+if(TFE_VITA)
+        set_source_files_properties(
+		"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/TFE_Ui/imGUI/imgui.cpp"
+                PROPERTIES COMPILE_DEFINITIONS IMGUI_DISABLE_DEFAULT_SHELL_FUNCTIONS
+        )
+endif()
 endif()
 
 ### installation ###

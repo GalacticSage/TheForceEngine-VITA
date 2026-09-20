@@ -3,6 +3,7 @@
 #include <TFE_FileSystem/filestream.h>
 #include <cassert>
 #include <cstring>
+#include <cstdlib>
 
 #ifdef _WIN32
 #define strdup _strdup  
@@ -10,6 +11,13 @@
 
 namespace TFE_System
 {
+	static char* duplicateMessage(const char* src)
+	{
+		const std::size_t bytes = strlen(src) + 1;
+		char* copy = static_cast<char*>(std::malloc(bytes));
+		if(copy) std::memcpy(copy, src, bytes);
+		return copy;
+	}
 	static char* s_tfeMessage[TFE_MSG_COUNT];
 	static char* s_tfeMessageOrig[TFE_MSG_COUNT];
 	static bool s_modMessagesLoaded = false;
@@ -45,7 +53,7 @@ namespace TFE_System
 			for (s32 i = 0; i < TFE_MSG_COUNT; i++)
 			{
 				free(s_tfeMessage[i]);
-				s_tfeMessage[i] = strdup(s_tfeMessageOrig[i]);
+				s_tfeMessage[i] = duplicateMessage(s_tfeMessageOrig[i]);
 			}
 			s_modMessagesLoaded = false;
 		}
@@ -112,7 +120,7 @@ namespace TFE_System
 		{
 			for (s32 i = 0; i < TFE_MSG_COUNT; i++)
 			{
-				s_tfeMessageOrig[i] = strdup(s_tfeMessage[i]);
+				s_tfeMessageOrig[i] = duplicateMessage(s_tfeMessage[i]);
 				if (!s_tfeMessageOrig[i])
 				{
 					freeMessages();

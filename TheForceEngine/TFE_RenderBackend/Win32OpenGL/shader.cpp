@@ -31,72 +31,161 @@ namespace ShaderGL
 	static std::string s_vertexFile, s_fragmentFile;
 }
 
-bool Shader::create(const char* vertexShaderGLSL, const char* fragmentShaderGLSL, const char* defineString/* = nullptr*/, ShaderVersion version/* = SHADER_VER_COMPTABILE*/)
+bool Shader::create(const char* vertexShaderGLSL, const char* fragmentShaderGLSL,
+                    const char* defineString /* = nullptr */,
+                    ShaderVersion version /* = SHADER_VER_COMPTABILE */)
 {
-	// Create shaders
-	m_shaderVersion = version;
+    m_shaderVersion = version;
 
-	const GLchar* version_string;
-	if (strcmp(SDL_GetPlatform(), "Mac OS X") == 0) {
-		// Force GLSL version 410 for macOS
-		version_string = "#version 410\n";
-	} else {
-		version_string = ShaderGL::c_glslVersionString[m_shaderVersion];
-	}
+    const GLchar* version_string;
+    if (strcmp(SDL_GetPlatform(), "Mac OS X") == 0)
+    {
+        version_string = "#version 410\n";
+    }
+    else
+    {
+        version_string = ShaderGL::c_glslVersionString[m_shaderVersion];
+    }
 
-	const GLchar *vertex_shader_with_version[3] = { version_string, defineString ? defineString : "", vertexShaderGLSL };
-	u32 vertHandle = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertHandle, 3, vertex_shader_with_version, NULL);
-	glCompileShader(vertHandle);
+#ifdef TFE_VITA
+    #define VSHLOG(x) TFE_System::logWrite(LOG_MSG, "VitaShader", x)
+#else
+    #define VSHLOG(x)
+#endif
 
-	GLint success = 0;
-	glGetShaderiv(vertHandle, GL_COMPILE_STATUS, &success);
-	if (!success)
-	{
-		GLchar infoLog[512];
-		glGetShaderInfoLog(vertHandle, 512, NULL, infoLog);
-		TFE_System::logWrite(LOG_ERROR, "Shader", "Vertex shader compilation failed:\n%s", infoLog);
-		return false;
-	}
+    const GLchar* vertex_shader_with_version[3] =
+    {
+        version_string,
+        defineString ? defineString : "",
+        vertexShaderGLSL
+    };
 
-	const GLchar *fragment_shader_with_version[3] = { version_string, defineString ? defineString : "", fragmentShaderGLSL };
-	u32 fragHandle = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragHandle, 3, fragment_shader_with_version, NULL);
-	glCompileShader(fragHandle);
-	glGetShaderiv(fragHandle, GL_COMPILE_STATUS, &success);
-	if (!success)
-	{
-		GLchar infoLog[512];
-		glGetShaderInfoLog(fragHandle, 512, NULL, infoLog);
-		TFE_System::logWrite(LOG_ERROR, "Shader", "Fragment shader compilation failed:\n%s", infoLog);
-		return false;
-	}
+    VSHLOG("01 before glCreateShader VS");
+    u32 vertHandle = glCreateShader(GL_VERTEX_SHADER);
+    VSHLOG("02 after glCreateShader VS");
 
-	m_gpuHandle = glCreateProgram();
-	glAttachShader(m_gpuHandle, vertHandle);
-	glAttachShader(m_gpuHandle, fragHandle);
-	// Bind vertex attribute names to slots.
-	for (u32 i = 0; i < ATTR_COUNT; i++)
-	{
-		glBindAttribLocation(m_gpuHandle, i, ShaderGL::c_shaderAttrName[i]);
-	}
+    VSHLOG("03 before glShaderSource VS");
+    glShaderSource(vertHandle, 3, vertex_shader_with_version, NULL);
+    VSHLOG("04 after glShaderSource VS");
 
-	glLinkProgram(m_gpuHandle);
+    VSHLOG("05 before glCompileShader VS");
+    glCompileShader(vertHandle);
+    VSHLOG("06 after glCompileShader VS");
 
-	glGetProgramiv(m_gpuHandle, GL_LINK_STATUS, &success);
-	if (!success)
-	{
-		GLchar infoLog[512];
-		glGetProgramInfoLog(m_gpuHandle, 512, NULL, infoLog);
-		TFE_System::logWrite(LOG_ERROR, "Shader", "Shader program linking failed:\n%s", infoLog);
-		return false;
-	}
+    GLint success = 0;
 
-	// Clean up shader objects
-	glDeleteShader(vertHandle);
-	glDeleteShader(fragHandle);
+    VSHLOG("07 before glGetShaderiv VS");
+    glGetShaderiv(vertHandle, GL_COMPILE_STATUS, &success);
+    VSHLOG("08 after glGetShaderiv VS");
 
-	return m_gpuHandle != 0;
+    if (!success)
+    {
+        GLchar infoLog[512];
+        glGetShaderInfoLog(vertHandle, 512, NULL, infoLog);
+        TFE_System::logWrite(
+            LOG_ERROR,
+            "Shader",
+            "Vertex shader compilation failed:\n%s",
+            infoLog
+        );
+        return false;
+    }
+
+    const GLchar* fragment_shader_with_version[3] =
+    {
+        version_string,
+        defineString ? defineString : "",
+        fragmentShaderGLSL
+    };
+
+    VSHLOG("09 before glCreateShader FS");
+    u32 fragHandle = glCreateShader(GL_FRAGMENT_SHADER);
+    VSHLOG("10 after glCreateShader FS");
+
+    VSHLOG("11 before glShaderSource FS");
+    glShaderSource(fragHandle, 3, fragment_shader_with_version, NULL);
+    VSHLOG("12 after glShaderSource FS");
+
+    VSHLOG("13 before glCompileShader FS");
+    glCompileShader(fragHandle);
+    VSHLOG("14 after glCompileShader FS");
+
+    VSHLOG("15 before glGetShaderiv FS");
+    glGetShaderiv(fragHandle, GL_COMPILE_STATUS, &success);
+    VSHLOG("16 after glGetShaderiv FS");
+
+    if (!success)
+    {
+        GLchar infoLog[512];
+        glGetShaderInfoLog(fragHandle, 512, NULL, infoLog);
+        TFE_System::logWrite(
+            LOG_ERROR,
+            "Shader",
+            "Fragment shader compilation failed:\n%s",
+            infoLog
+        );
+        return false;
+    }
+
+    VSHLOG("17 before glCreateProgram");
+    m_gpuHandle = glCreateProgram();
+    VSHLOG("18 after glCreateProgram");
+
+    VSHLOG("19 before glAttachShader VS");
+    glAttachShader(m_gpuHandle, vertHandle);
+    VSHLOG("20 after glAttachShader VS");
+
+    VSHLOG("21 before glAttachShader FS");
+    glAttachShader(m_gpuHandle, fragHandle);
+    VSHLOG("22 after glAttachShader FS");
+
+    VSHLOG("23 before glBindAttribLocation loop");
+
+    for (u32 i = 0; i < ATTR_COUNT; i++)
+    {
+        glBindAttribLocation(
+            m_gpuHandle,
+            i,
+            ShaderGL::c_shaderAttrName[i]
+        );
+    }
+
+    VSHLOG("24 after glBindAttribLocation loop");
+
+    VSHLOG("25 before glLinkProgram");
+    glLinkProgram(m_gpuHandle);
+    VSHLOG("26 after glLinkProgram");
+
+    VSHLOG("27 before glGetProgramiv");
+    glGetProgramiv(m_gpuHandle, GL_LINK_STATUS, &success);
+    VSHLOG("28 after glGetProgramiv");
+
+    if (!success)
+    {
+        GLchar infoLog[512];
+        glGetProgramInfoLog(m_gpuHandle, 512, NULL, infoLog);
+        TFE_System::logWrite(
+            LOG_ERROR,
+            "Shader",
+            "Shader program linking failed:\n%s",
+            infoLog
+        );
+        return false;
+    }
+
+    VSHLOG("29 before glDeleteShader VS");
+    glDeleteShader(vertHandle);
+    VSHLOG("30 after glDeleteShader VS");
+
+    VSHLOG("31 before glDeleteShader FS");
+    glDeleteShader(fragHandle);
+    VSHLOG("32 after glDeleteShader FS");
+
+#ifdef TFE_VITA
+    #undef VSHLOG
+#endif
+
+    return m_gpuHandle != 0;
 }
 
 bool Shader::load(const char* vertexShaderFile, const char* fragmentShaderFile, u32 defineCount/* = 0*/, ShaderDefine* defines/* = nullptr*/, ShaderVersion version/* = SHADER_VER_COMPTABILE*/)

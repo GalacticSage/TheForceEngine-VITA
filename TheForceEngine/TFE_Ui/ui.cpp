@@ -5,7 +5,11 @@
 #include "imGUI/imgui.h"
 #include "imGUI/imgui_impl_sdl2.h"
 #include "imGUI/imgui_impl_opengl3.h"
+
+#ifndef __vita__
 #include "portable-file-dialogs.h"
+#endif
+
 #include "markdown.h"
 #include <SDL.h>
 
@@ -17,14 +21,20 @@ static bool s_guiFrameActive;
 
 bool init(void* window, void* context, s32 uiScale)
 {
+#ifdef __vita__
+	glsl_version = "#version 100";
+#elif
 	glsl_version = strcmp(SDL_GetPlatform(), "Mac OS X") == 0 ? "#version 410" : "#version 130";
-	
+#endif
 	s_uiScale = uiScale;
 
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
+#ifdef TFE_VITA
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+#endif
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
@@ -51,12 +61,14 @@ bool init(void* window, void* context, s32 uiScale)
 	
 	TFE_Markdown::init(f32(16 * s_uiScale / 100));
 
+	#ifndef __vita__
 	// Initialize file dialogs.
 	if (!pfd::settings::available())
 	{
 		// TODO: Log error
 		return false;
 	}
+	#endif
 	
 	return true;
 }
@@ -117,6 +129,20 @@ void invalidateFontAtlas()
 // This can be a bit of a waste but I'd rather have consistent paths through most of the application
 // and restrict the ugliness to as small an area as possible.
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
+#ifdef __vita__
+FileResult openFileDialog(const char*, const char*, const std::vector<std::string>&, bool)
+{
+	return {};
+}
+FileResult directorySelectDialog(const char*, const char*, bool)
+{
+	return {};
+}
+FileResult saveFileDialog(const char*, const char*, std::vector<std::string>, bool)
+{
+	return {};
+}
+#else
 FileResult openFileDialog(const char* title, const char* initPath, std::vector<std::string> const &filters/* = { "All Files", "*" }*/, bool multiSelect/* = false*/)
 {
 	char initPathOS[TFE_MAX_PATH] = "";
@@ -157,5 +183,7 @@ FileResult saveFileDialog(const char* title, const char* initPath, std::vector<s
 
 	return result;
 }
+
+#endif
 
 }

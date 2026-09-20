@@ -2360,6 +2360,24 @@ int gladLoadGLUserPtr( GLADuserptrloadfunc load, void *userptr) {
     if(glad_glGetString == NULL) return 0;
     version = glad_gl_find_core_gl();
 
+#ifdef TFE_VITA
+
+	GLAD_GL_VERSION_1_0 = 1;
+	GLAD_GL_VERSION_1_1 = 1;
+	GLAD_GL_VERSION_1_2 = 1;
+	GLAD_GL_VERSION_1_3 = 1;
+	GLAD_GL_VERSION_1_4 = 1;
+	GLAD_GL_VERSION_1_5 = 1;
+	GLAD_GL_VERSION_2_0 = 1;
+	GLAD_GL_VERSION_2_1 = 1;
+	GLAD_GL_VERSION_3_0 = 1;
+	GLAD_GL_VERSION_3_1 = 1;
+	GLAD_GL_VERSION_3_2 = 1;
+	GLAD_GL_VERSION_3_3 = 1;
+	version = GLAD_MAKE_VERSION(3, 3);
+
+#endif
+
     glad_gl_load_GL_VERSION_1_0(load, userptr);
     glad_gl_load_GL_VERSION_1_1(load, userptr);
     glad_gl_load_GL_VERSION_1_2(load, userptr);

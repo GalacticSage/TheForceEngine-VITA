@@ -50,6 +50,13 @@ namespace TFE_Paths
 	// to the cwd; otherwise store in $HOME/.local/share/<tfe>/
 	static void setTFEPath(const char *tfe, u32 pathid)
 	{
+#ifdef __vita__
+		char* pref = SDL_GetPrefPath("", tfe);
+		if(!pref)
+			return;
+		s_paths[pathid] = pref;
+		SDL_free(pref);
+#else
 		char *home = getenv("HOME"), *tdh = getenv("TFE_DATA_HOME");
 		char path[TFE_MAX_PATH], cwd[TFE_MAX_PATH];
 		int i;
@@ -90,6 +97,7 @@ namespace TFE_Paths
 		}
 		s_paths[pathid] = path;
 		FileUtil::makeDirectory(path);
+#endif
 	}
 
 	// System Paths: where all the support data is located, which is
@@ -230,6 +238,14 @@ namespace TFE_Paths
 	// report whether a change was made to the input.
 	bool mapSystemPath(char *fname)
 	{
+		if(!fname || !fname[0])
+			return false;
+
+#ifdef TFE_VITA
+		if(strstr(fname, ":/") != nullptr)
+			return true;
+#endif
+
 		char fullname[TFE_MAX_PATH];
 		for (auto it = s_systemPaths.begin(); it != s_systemPaths.end(); it++) {
 			sprintf(fullname, "%s%s", it->c_str(), fname);

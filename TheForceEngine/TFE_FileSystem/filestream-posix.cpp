@@ -52,8 +52,19 @@ bool FileStream::open(const char *filename, AccessMode mode)
 	memset(fn, 0, TFE_MAX_PATH);
 	strcpy(fn, filename);
 	// relative path: try to find in one of the system paths.
-	if (filename[0] != '/')
+	bool absolutePath = (filename[0] == '/');
+
+#ifdef TFE_VITA
+
+	const char* deviceSep = strstr(filename, ":/");
+	if(deviceSep != nullptr)
+		absolutePath = true;
+#endif
+
+	if(!absolutePath)
+	{
 		TFE_Paths::mapSystemPath(fn);
+	}
 
 	// try to open the given filename first; if that fails,
 	// because the filename cannot be found, try to find

@@ -5,6 +5,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include <ctype.h>
+#include <ctime>
 #include "types.h"
 
 #define TFE_MAJOR_VERSION 1
