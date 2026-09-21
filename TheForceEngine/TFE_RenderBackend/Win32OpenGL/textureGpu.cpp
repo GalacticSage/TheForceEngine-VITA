@@ -147,16 +147,29 @@ bool TextureGpu::createWithData(u32 width, u32 height, const void* buffer, MagFi
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 	
 	f32 maxAniso = OpenGL_Caps::getMaxAnisotropy();
+	
+#ifdef TFE_VITA
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+	magFilter == MAG_FILTER_NONE ? GL_NEAREST : GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+	magFilter == MAG_FILTER_NONE ? GL_NEAREST : GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+#else
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter == MAG_FILTER_NONE ? GL_NEAREST : GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+	magFilter == MAG_FILTER_NONE ? GL_NEAREST : GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+#endif
 	if (OpenGL_Caps::supportsAniso())
 	{
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, maxAniso);
 	}
 
+#ifndef TFE_VITA
 	glGenerateMipmap(GL_TEXTURE_2D);
+#endif
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	return true;

@@ -325,13 +325,14 @@ namespace TFE_RenderBackend
 		s_postEffectBlit->enableFeatures(BLIT_GPU_COLOR_CONVERSION);
 
 		s_bloomTheshold = new BloomThreshold();
-		s_bloomTheshold->init();
-
 		s_bloomDownsample = new BloomDownsample();
-		s_bloomDownsample->init();
-
 		s_bloomMerge = new BloomMerge();
+
+#ifndef TFE_VITA
+		s_bloomTheshold->init();
+		s_bloomDownsample->init();
 		s_bloomMerge->init();
+#endif
 
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClearDepth(0.0f);
@@ -780,7 +781,12 @@ namespace TFE_RenderBackend
 		s_asyncFrameBuffer = (vdispInfo.flags & VDISP_ASYNC_FRAMEBUFFER) != 0;
 		s_gpuColorConvert = (vdispInfo.flags & VDISP_GPU_COLOR_CONVERT) != 0;
 		s_useRenderTarget = (vdispInfo.flags & VDISP_RENDER_TARGET) != 0;
+
+#ifdef TFE_VITA
+		s_bloomEnable = false;
+#else
 		s_bloomEnable = graphicsSettings->bloomEnabled && s_useRenderTarget;
+#endif
 
 		return recreateDisplay(true);
 	}
@@ -896,7 +902,13 @@ namespace TFE_RenderBackend
 		if (bloomChanged)
 		{
 			TFE_Settings_Graphics* graphicsSettings = TFE_Settings::getGraphicsSettings();
+			
+#ifdef TFE_VITA
+			s_bloomEnable = false;
+#else
 			s_bloomEnable = graphicsSettings->bloomEnabled && s_useRenderTarget;
+#endif
+			
 			recreateDisplay(false);
 		}
 
