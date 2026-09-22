@@ -196,6 +196,14 @@ if(TFE_VITA)
 		list(APPEND _vpk_inputs "${TFE_VITA_GAME_DATA_DIR}/${_file}")
 	endforeach()
 
+	file(GLOB_RECURSE _livearea_files CONFIGURE_DEPENDS LIST_DIRECTORIES FALSE
+		RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/sce_sys"
+		"${CMAKE_CURRENT_SOURCE_DIR}/sce_sys/*")
+	foreach(_file IN LISTS _livearea_files)
+		list(APPEND _vpk_args -a "${CMAKE_CURRENT_SOURCE_DIR}/sce_sys/${_file}=sce_sys/${_file}")
+		list(APPEND _vpk_inputs "${CMAKE_CURRENT_SOURCE_DIR}/sce_sys/${_file}")
+	endforeach()
+
 	add_custom_command(
 		OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/tfe.vpk"
 		COMMAND "${VITASDK}/bin/vita-mksfoex"
