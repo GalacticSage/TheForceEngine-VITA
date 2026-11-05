@@ -515,7 +515,7 @@ namespace TFE_Jedi
 			else if (id == 4)
 			{
 				chunkData += 3;
-				ImSetSoundTrigger((ImSoundId)data->sound, chunkData);
+				ImSetSoundTrigger((ImSoundId)(uintptr_t)data->sound, chunkData);
 				data->offset += 6;
 			}
 			else if (id == 6)

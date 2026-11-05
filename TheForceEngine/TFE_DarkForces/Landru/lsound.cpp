@@ -134,38 +134,38 @@ namespace TFE_DarkForces
 	void startSfx(LSound* sound)
 	{
 		TFE_A11Y::onSoundPlay(sound->name, TFE_A11Y::CaptionEnv::CC_CUTSCENE);
-		ImStartSfx((ImSoundId)sound, DEFAULT_PRIORITY);
+		ImStartSfx((ImSoundId)(uintptr_t)sound, DEFAULT_PRIORITY);
 	}
 
 	void startSpeech(LSound* sound)
 	{
 		TFE_A11Y::onSoundPlay(sound->name, TFE_A11Y::CaptionEnv::CC_CUTSCENE);
-		ImStartVoice((ImSoundId)sound, DEFAULT_PRIORITY);
+		ImStartVoice((ImSoundId)(uintptr_t)sound, DEFAULT_PRIORITY);
 	}
 
 	void stopSound(LSound* sound)
 	{
-		ImStopSound((ImSoundId)sound);
+		ImStopSound((ImSoundId)(uintptr_t)sound);
 	}
 
 	void setSoundVolume(LSound* sound, s32 volume)
 	{
-		ImSetParam((ImSoundId)sound, soundVol, volume);
+		ImSetParam((ImSoundId)(uintptr_t)sound, soundVol, volume);
 	}
 
 	void setSoundFade(LSound* sound, s32 volume, s32 time)
 	{
-		ImFadeParam((ImSoundId)sound, soundVol, volume, time);
+		ImFadeParam((ImSoundId)(uintptr_t)sound, soundVol, volume, time);
 	}
 
 	void setSoundPan(LSound* sound, s32 pan)
 	{
-		ImSetParam((ImSoundId)sound, soundPan, pan);
+		ImSetParam((ImSoundId)(uintptr_t)sound, soundPan, pan);
 	}
 
 	void setSoundPanFade(LSound* sound, s32 pan, s32 time)
 	{
-		ImFadeParam((ImSoundId)sound, soundPan, pan, time);
+		ImFadeParam((ImSoundId)(uintptr_t)sound, soundPan, pan, time);
 	}
 
 	/////////////////////////////////////////////////////////
