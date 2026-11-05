@@ -211,6 +211,12 @@ void handleEvent(SDL_Event& Event)
 
 bool sdlInit()
 {
+#ifdef TFE_VITA
+	// By default SDL turns touches on *both* touch panels into mouse events, so fingers resting
+	// on the rear touchpad move/click the cursor. Only the front touchscreen should act as the mouse.
+	SDL_SetHint(SDL_HINT_VITA_TOUCH_MOUSE_DEVICE, "0");
+	SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
+#endif
 	const int code = SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO);
 	if (code != 0) { return false; }
 

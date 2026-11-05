@@ -55,6 +55,7 @@ namespace TFE_RenderBackend
 	static u32 s_virtualWidth3d;
 
 	static bool s_widescreen = false;
+	static s32 s_vdispRect[4] = { 0, 0, 0, 0 };	// x, y, w, h in window space.
 	static bool s_asyncFrameBuffer = true;
 	static bool s_gpuColorConvert = false;
 	static bool s_useRenderTarget = false;
@@ -694,6 +695,15 @@ namespace TFE_RenderBackend
 		displayInfo->refreshRate = (m_windowState.flags & WINFLAG_VSYNC) != 0 ? m_windowState.refreshRate : 0.0f;
 	}
 
+	void getVirtualDisplayRect(s32* x, s32* y, s32* w, s32* h)
+	{
+		const bool valid = s_vdispRect[2] > 0 && s_vdispRect[3] > 0;
+		*x = valid ? s_vdispRect[0] : 0;
+		*y = valid ? s_vdispRect[1] : 0;
+		*w = valid ? s_vdispRect[2] : (s32)m_windowState.width;
+		*h = valid ? s_vdispRect[3] : (s32)m_windowState.height;
+	}
+
 	bool recreateDisplay(bool setupPostFx)
 	{
 		if (s_virtualDisplay)
@@ -1263,6 +1273,10 @@ namespace TFE_RenderBackend
 			// letterbox
 			y = std::max(0, ((s32)m_windowState.height - h) / 2);
 		}
+		s_vdispRect[0] = x;
+		s_vdispRect[1] = y;
+		s_vdispRect[2] = w;
+		s_vdispRect[3] = h;
 		TFE_PostProcess::clearEffectStack();
 
 		if (useDynamicTexture)

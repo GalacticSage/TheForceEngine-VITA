@@ -170,6 +170,23 @@ namespace TFE_Settings
 	{
 		for (u32 gameId = 0; gameId < Game_Count; gameId++)
 		{
+#ifdef TFE_VITA
+			// The VPK ships the full Dark Forces data (GOBs + LFD/). Always prefer it over a
+			// previously saved path (e.g. an old ux0:data/TheForceEngine/Game/ copy), which may be
+			// incomplete or out of date.
+			if (gameId == Game_Dark_Forces)
+			{
+				const char* programPath = TFE_Paths::getPath(PATH_PROGRAM);
+				char lfdPath[TFE_MAX_PATH];
+				snprintf(lfdPath, TFE_MAX_PATH, "%sLFD/", programPath);
+				if (validatePath(programPath, c_validationFile[gameId]) && validatePath(lfdPath, "AGENTMNU.LFD"))
+				{
+					strcpy(s_gameSettings.header[gameId].sourcePath, programPath);
+					FileUtil::fixupPath(s_gameSettings.header[gameId].sourcePath);
+					continue;
+				}
+			}
+#endif
 			const size_t sourcePathLen = strlen(s_gameSettings.header[gameId].sourcePath);
 			bool pathValid = sourcePathLen && validatePath(s_gameSettings.header[gameId].sourcePath, c_validationFile[gameId]);
 
@@ -899,6 +916,10 @@ namespace TFE_Settings
 		else if (strcasecmp("renderer", key) == 0)
 		{
 			s_graphicsSettings.rendererIndex = parseInt(value);
+#ifdef TFE_VITA
+			// vitaGL lacks the GL 3.3 features the GPU renderer needs (MRT, texture arrays/buffers...).
+			s_graphicsSettings.rendererIndex = 0;
+#endif
 		}
 		else if (strcasecmp("colorMode", key) == 0)
 		{

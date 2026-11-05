@@ -115,6 +115,8 @@ namespace TFE_RenderBackend
 	void clearWindow();
 
 	void getDisplayInfo(DisplayInfo* displayInfo);
+	// Window-space rectangle the virtual display (game/menu image) is drawn into (after pillar/letterboxing).
+	void getVirtualDisplayRect(s32* x, s32* y, s32* w, s32* h);
 	void updateSettings();
 
 	// virtual display

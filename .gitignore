@@ -78,6 +78,7 @@ TheForceEngine/bug_reports/
 WDFuseCommonFiles/
 x64/Debug/
 CMakeFiles/
+logs/
 
 # Linux
 TheForceEngine/tfelnx

@@ -210,12 +210,20 @@ namespace TFE_DarkForces
 
 		// TFE: Added since inputs can be skipped at low framerates.
 		// Ignore Enter key if player is pressing Alt-Enter (to switch between windowed and fullscreen)
-		if (TFE_Input::keyPressed(KEY_ESCAPE) || (TFE_Input::keyPressed(KEY_RETURN) && !TFE_Input::keyDown(KEY_LALT) 
-			&& !TFE_Input::keyDown(KEY_RALT)))
+		bool skipPressed = TFE_Input::keyPressed(KEY_ESCAPE) || (TFE_Input::keyPressed(KEY_RETURN) && !TFE_Input::keyDown(KEY_LALT)
+			&& !TFE_Input::keyDown(KEY_RALT));
+		bool nextPressed = TFE_Input::keyPressed(KEY_SPACE);
+#ifdef TFE_VITA
+		// No keyboard: Start / Cross / screen tap skips the cutscene, Square advances to the next scene.
+		skipPressed = skipPressed || TFE_Input::buttonPressed(CONTROLLER_BUTTON_START) || TFE_Input::buttonPressed(CONTROLLER_BUTTON_A)
+			|| TFE_Input::mousePressed(MBUTTON_LEFT);
+		nextPressed = nextPressed || TFE_Input::buttonPressed(CONTROLLER_BUTTON_X);
+#endif
+		if (skipPressed)
 		{
 			s_skipSceneInput = JTRUE;
 		}
-		else if (TFE_Input::keyPressed(KEY_SPACE))
+		else if (nextPressed)
 		{
 			s_nextSceneInput = JTRUE;
 			if (TFE_A11Y::cutsceneCaptionsEnabled()) TFE_A11Y::clearActiveCaptions();

@@ -12,6 +12,7 @@
 #include <TFE_Archive/archive.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_Input/input.h>
+#include <TFE_Input/vitaKeyboard.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Level/rtexture.h>
@@ -301,6 +302,9 @@ namespace TFE_DarkForces
 						s_editBox.cursor = 0;
 						s_editBox.inputField = s_newAgentName;
 						s_editBox.maxLen = 16;
+#ifdef TFE_VITA
+						TFE_VitaKeyboard::open("Enter agent name", "", s_editBox.maxLen);
+#endif
 					} break;
 					case AGENT_REMOVE:
 						s_removeAgentDlg = JTRUE;
@@ -449,8 +453,14 @@ namespace TFE_DarkForces
 
 	void agentMenu_load(LangHotkeys* langKeys)
 	{
+		s_langKeys = langKeys;
+
 		FilePath filePath;
-		if (!TFE_Paths::getFilePath("AGENTMNU.LFD", &filePath)) { return; }
+		if (!TFE_Paths::getFilePath("AGENTMNU.LFD", &filePath))
+		{
+			TFE_System::logWrite(LOG_ERROR, "AgentMenu", "Cannot find 'AGENTMNU.LFD' - make sure the Dark Forces LFD/ folder is present in the source data directory.");
+			return;
+		}
 		Archive* archive = Archive::getArchive(ARCHIVE_LFD, "AGENTMNU", filePath.path);
 		TFE_Paths::addLocalArchive(archive);
 
@@ -459,8 +469,6 @@ namespace TFE_DarkForces
 		s_agentDlgCount = getFramesFromAnim("agentdlg.anim", &s_agentDlgFrames);
 		getFrameFromDelt("cursor.delt", &s_cursor);
 		TFE_Paths::removeLastArchive();
-		
-		s_langKeys = langKeys;
 	}
 		
 	void agentMenu_startup()
@@ -588,6 +596,39 @@ namespace TFE_DarkForces
 
 	void updateNewAgentDlg()
 	{
+#ifdef TFE_VITA
+		// Name entry through the system keyboard dialog.
+		if (TFE_VitaKeyboard::isActive())
+		{
+			char name[32];
+			const TFE_VitaKeyboard::Status status = TFE_VitaKeyboard::update(name, s_editBox.maxLen + 1);
+			if (status == TFE_VitaKeyboard::VKB_RUNNING)
+			{
+				return;	// Ignore game input while the keyboard is up.
+			}
+			s_buttonPressed = -1;
+			s_buttonHover = JFALSE;
+			if (status == TFE_VitaKeyboard::VKB_ACCEPTED && name[0])
+			{
+				strcpy(s_newAgentName, name);
+				s_editBox.cursor = (s32)strlen(s_newAgentName);
+				agentMenu_createNewAgent();
+				s_newAgentDlg = JFALSE;
+			}
+			else if (status == TFE_VitaKeyboard::VKB_CANCELED)
+			{
+				s_newAgentDlg = JFALSE;
+			}
+			// Accepted with an empty name: stay in the dialog, tap the name box to try again.
+			return;
+		}
+		// Tapping the name box re-opens the keyboard.
+		if (TFE_Input::mousePressed(MBUTTON_LEFT) && s_cursorPos.x >= 106 && s_cursorPos.x <= 216 && s_cursorPos.z >= 87 && s_cursorPos.z <= 100)
+		{
+			TFE_VitaKeyboard::open("Enter agent name", s_newAgentName, s_editBox.maxLen);
+			return;
+		}
+#endif
 		updateEditBox(&s_editBox);
 
 		if (TFE_Input::keyPressed(KEY_RETURN) || TFE_Input::keyPressed(KEY_KP_ENTER))

@@ -170,9 +170,16 @@ if(TFE_VITA)
 	set_target_properties(tfe PROPERTIES OUTPUT_NAME "tfe")
 	vita_create_self(eboot.bin tfe)
 	set(TFE_VITA_GAME_DATA_DIR "" CACHE PATH "Dark Forces game data dir")
-	if(NOT EXISTS "${TFE_VITA_GAME_DATA_DIR}/DARK.GOB")
-		message(FATAL_ERROR "TFE_VITA_GAME_DATA_DIR must contain DARK.GOB")
-	endif()
+	# Everything Dark Forces needs from the original game folder (the "Game" folder of the
+	# Steam/GOG release): the GOBs, LOCAL.MSG and the LFD/ folder (menus, briefings, cutscenes).
+	set(_required_game_files DARK.GOB SOUNDS.GOB SPRITES.GOB TEXTURES.GOB LOCAL.MSG
+		LFD/AGENTMNU.LFD LFD/MENU.LFD LFD/DFBRIEF.LFD LFD/JEDISFX.LFD LFD/FTEXTCRA.LFD)
+	foreach(_file IN LISTS _required_game_files)
+		if(NOT EXISTS "${TFE_VITA_GAME_DATA_DIR}/${_file}")
+			message(FATAL_ERROR "TFE_VITA_GAME_DATA_DIR (${TFE_VITA_GAME_DATA_DIR}) is missing ${_file}. "
+				"Copy the GOB files, LOCAL.MSG and the LFD folder from the Dark Forces 'Game' folder.")
+		endif()
+	endforeach()
 
 	set(_vpk_args)
 	set(_vpk_inputs)
@@ -190,7 +197,9 @@ if(TFE_VITA)
 		"${TFE_VITA_GAME_DATA_DIR}/*.GOB"
 		"${TFE_VITA_GAME_DATA_DIR}/*.gob"
 		"${TFE_VITA_GAME_DATA_DIR}/*.LFD"
-		"${TFE_VITA_GAME_DATA_DIR}/*.lfd")
+		"${TFE_VITA_GAME_DATA_DIR}/*.lfd"
+		"${TFE_VITA_GAME_DATA_DIR}/*.MSG"
+		"${TFE_VITA_GAME_DATA_DIR}/*.msg")
 	foreach(_file IN LISTS _game_files)
 		list(APPEND _vpk_args -a "${TFE_VITA_GAME_DATA_DIR}/${_file}=${_file}")
 		list(APPEND _vpk_inputs "${TFE_VITA_GAME_DATA_DIR}/${_file}")
@@ -213,7 +222,7 @@ if(TFE_VITA)
 		-s "${CMAKE_CURRENT_BINARY_DIR}/tfe_param.sfo"
 		-b "${CMAKE_CURRENT_BINARY_DIR}/eboot.bin"
 		${_vpk_args} "${CMAKE_CURRENT_BINARY_DIR}/tfe.vpk"
-		DEPENDS eboot.bin-self ${_vpk_inputs}
+		DEPENDS eboot.bin-self "${CMAKE_CURRENT_BINARY_DIR}/eboot.bin" ${_vpk_inputs}
 		COMMAND_EXPAND_LISTS VERBATIM
 	)
 	add_custom_target(tfe_vpk DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/tfe.vpk")

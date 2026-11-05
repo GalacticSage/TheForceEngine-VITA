@@ -2,6 +2,7 @@
 #include <TFE_RenderBackend/renderState.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include "gl.h"
+#include <TFE_System/system.h>
 #include <assert.h>
 
 namespace
@@ -59,7 +60,18 @@ bool RenderTarget::create(s32 textureCount, TextureGpu** textures, bool depthBuf
 	{
 		drawBuffers[i] = GL_COLOR_ATTACHMENT0 + i;
 	}
+#ifdef TFE_VITA
+	// vitaGL supports a single color attachment and does not export glDrawBuffers
+	// (attachment 0 is the default draw buffer anyway).
+	if (m_textureCount > 1)
+	{
+		TFE_System::logWrite(LOG_ERROR, "RenderTarget", "Multiple render target outputs (%u) are not supported on PS Vita.", m_textureCount);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		return false;
+	}
+#else
 	glDrawBuffers(m_textureCount, drawBuffers);
+#endif
 
 	// check FBO status
 	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);

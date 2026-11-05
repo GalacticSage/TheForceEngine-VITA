@@ -3206,7 +3206,12 @@ namespace TFE_FrontEndUI
 
 		ImGui::LabelText("##ConfigLabel", "Renderer:"); ImGui::SameLine(75 * s_uiScale);
 		ImGui::SetNextItemWidth(196 * s_uiScale);
+#ifdef TFE_VITA
+		graphics->rendererIndex = 0;	// GPU renderer is not supported by vitaGL.
+		ImGui::Combo("##Renderer", &graphics->rendererIndex, c_renderer, 1);
+#else
 		ImGui::Combo("##Renderer", &graphics->rendererIndex, c_renderer, IM_ARRAYSIZE(c_renderer));
+#endif
 		if (graphics->rendererIndex == 0)
 		{
 			// Software
@@ -4104,7 +4109,11 @@ namespace TFE_FrontEndUI
 				gameSettings->df_pitchLimit = (temp == TEMPLATE_MODERN) ? PITCH_MAXIMUM : PITCH_VANILLA_PLUS;
 
 				// Graphics
+#ifdef TFE_VITA
+				graphicsSettings->rendererIndex = RENDERER_SOFTWARE;	// GPU renderer is not supported by vitaGL.
+#else
 				graphicsSettings->rendererIndex = RENDERER_HARDWARE;
+#endif
 				graphicsSettings->skyMode = SKYMODE_CYLINDER;
 				graphicsSettings->widescreen = true;
 				graphicsSettings->gameResolution.x = displayInfo.width;

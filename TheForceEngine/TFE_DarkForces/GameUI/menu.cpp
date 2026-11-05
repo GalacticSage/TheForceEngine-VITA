@@ -72,6 +72,14 @@ namespace TFE_DarkForces
 		}
 		else
 		{
+#ifdef TFE_VITA
+			// Touchscreen: the cursor must sit exactly under the finger, so map the absolute touch
+			// position through the rectangle the menu image is actually drawn into.
+			s32 rx, ry, rw, rh;
+			TFE_RenderBackend::getVirtualDisplayRect(&rx, &ry, &rw, &rh);
+			s_cursorPos.x = clamp((mx - rx) * width  / max(rw, 1), 0, width  - 3);
+			s_cursorPos.z = clamp((my - ry) * height / max(rh, 1), 0, height - 3);
+#else
 			if (displayInfo.width >= displayInfo.height)
 			{
 				s_cursorPos.x = clamp(s_cursorPosAccum.x * (s32)height / (s32)displayInfo.height, 0, (s32)width - 3);
@@ -82,6 +90,7 @@ namespace TFE_DarkForces
 				s_cursorPos.x = clamp(s_cursorPosAccum.x * (s32)width / (s32)displayInfo.width, 0, (s32)width - 3);
 				s_cursorPos.z = clamp(s_cursorPosAccum.z * (s32)width / (s32)displayInfo.width, 0, (s32)height - 3);
 			}
+#endif
 		}
 
 		// Store the PDA positions for replay.
