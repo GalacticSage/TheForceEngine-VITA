@@ -201,6 +201,14 @@ sudo cmake --install build-vita
 >
 > If it says `OFF`, vitaGL was not found, go back and fix the vitaGL install before continuing. The build will otherwise succeed but produce an SDL without OpenGL support, failing at runtime with "Cannot initialize GPU/Window".
 
+
+###### Add the game files
+```shellscript
+mkdir TFE_Data
+```
+Copy the GOB files, LOCAL.MSG and the LFD folder from the Dark Forces
+  'Game' folder to the TFE_Data folder
+
 ###### Build the VPK
 
 ```shellscript
